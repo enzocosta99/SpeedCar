@@ -2,12 +2,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-//Com base neste Script - vamos melhorar nosso carro e deixa-lo mais tunano 😜
-//CRIAR UM CARRO COM MOTOR 4 POR 4
-//CRIAR UM CARRO COM FREIO NAS QUATRO RODAS
-//CRIAR UM JIP E UM CAMINHÃO.😱 
-//CRIE UM FREIO DE MÃO .
-//ACENDER E APAGAR A LUZ DO CARRO
 
 public class CarController : MonoBehaviour
 {    
@@ -17,25 +11,28 @@ public class CarController : MonoBehaviour
     private float horizontalInput;
     private float verticalInput;
     private float currentSteerAngle;
-    private float currentBreakForce;
-    private bool isBreaking;
-
+    private float currentBrakeForce;
+    private bool isBraking;
+    private bool handbrakeActive = false;
+    private bool headlightsOn = false;
 
     [SerializeField] private WheelCollider frontLeftWheelCollider;
-    [SerializeField] private WheelCollider frontRighttWheelCollider;
-    [SerializeField] private WheelCollider RearLeftWheelCollider;
-    [SerializeField] private WheelCollider RearRightWheelCollider;
+    [SerializeField] private WheelCollider frontRightWheelCollider;
+    [SerializeField] private WheelCollider rearLeftWheelCollider;
+    [SerializeField] private WheelCollider rearRightWheelCollider;
 
-    
     [SerializeField] private Transform frontLeftWheelTransform;
-    [SerializeField] private Transform frontRighttWheelTransform;
-    [SerializeField] private Transform RearLeftWheelTransformr;
-    [SerializeField] private Transform RearRightWheelTransform;
-
+    [SerializeField] private Transform frontRightWheelTransform;
+    [SerializeField] private Transform rearLeftWheelTransform;
+    [SerializeField] private Transform rearRightWheelTransform;
 
     [SerializeField] private float motorForce;
-    [SerializeField] private float breakForce;
+    [SerializeField] private float brakeForce;
     [SerializeField] private float maxSteeringAngle;
+    [SerializeField] private float handbrakeTorque;
+
+    [SerializeField] private Light leftHeadlight;
+    [SerializeField] private Light rightHeadlight;
 
     private void FixedUpdate() 
     {
@@ -43,8 +40,7 @@ public class CarController : MonoBehaviour
         HandleMotor();
         HandleSteering();
         UpdateWheels();
-        RestartPosition();       
-
+        RestartPosition();
     }
 
     private void RestartPosition()
@@ -61,42 +57,52 @@ public class CarController : MonoBehaviour
     {
         horizontalInput = Input.GetAxis(HORIZONTAL);
         verticalInput = Input.GetAxis(VERTICAL);
-        isBreaking = Input.GetKey(KeyCode.Space);
+        isBraking = Input.GetKey(KeyCode.Space);
+        if (Input.GetKeyDown(KeyCode.H)) handbrakeActive = !handbrakeActive;
+        if (Input.GetKeyDown(KeyCode.L)) ToggleHeadlights();
     }
 
     private void HandleMotor()
     {
         frontLeftWheelCollider.motorTorque = verticalInput * motorForce;
-        frontRighttWheelCollider.motorTorque = verticalInput * motorForce;
-        currentBreakForce = isBreaking ? breakForce : 0f;
-        ApplyBreaking();   
+        frontRightWheelCollider.motorTorque = verticalInput * motorForce;
+        rearLeftWheelCollider.motorTorque = verticalInput * motorForce;
+        rearRightWheelCollider.motorTorque = verticalInput * motorForce;
+        
+        currentBrakeForce = isBraking ? brakeForce : 0f;
+        ApplyBraking();
     }
 
-    private void ApplyBreaking()
+    private void ApplyBraking()
     {
-        frontRighttWheelCollider.brakeTorque = currentBreakForce;
-        frontLeftWheelCollider.brakeTorque = currentBreakForce; 
-        RearLeftWheelCollider.brakeTorque = currentBreakForce;
-        RearRightWheelCollider.brakeTorque = currentBreakForce;
+        frontRightWheelCollider.brakeTorque = currentBrakeForce;
+        frontLeftWheelCollider.brakeTorque = currentBrakeForce; 
+        rearLeftWheelCollider.brakeTorque = currentBrakeForce;
+        rearRightWheelCollider.brakeTorque = currentBrakeForce;
+        
+        if (handbrakeActive)
+        {
+            rearLeftWheelCollider.brakeTorque = handbrakeTorque;
+            rearRightWheelCollider.brakeTorque = handbrakeTorque;
+        }
     }
 
     private void HandleSteering()
     {
         currentSteerAngle = maxSteeringAngle * horizontalInput;
         frontLeftWheelCollider.steerAngle = currentSteerAngle;
-        frontRighttWheelCollider.steerAngle = currentSteerAngle;
+        frontRightWheelCollider.steerAngle = currentSteerAngle;
     }
 
     private void UpdateWheels()
     {
        UpdateSingleWheelCollider(frontLeftWheelCollider, frontLeftWheelTransform);
-       UpdateSingleWheelCollider(frontRighttWheelCollider, frontRighttWheelTransform);
-       UpdateSingleWheelCollider(RearRightWheelCollider, RearRightWheelTransform);
-       UpdateSingleWheelCollider(RearLeftWheelCollider, RearLeftWheelTransformr);
-       
+       UpdateSingleWheelCollider(frontRightWheelCollider, frontRightWheelTransform);
+       UpdateSingleWheelCollider(rearRightWheelCollider, rearRightWheelTransform);
+       UpdateSingleWheelCollider(rearLeftWheelCollider, rearLeftWheelTransform);
     }
 
-    private void UpdateSingleWheelCollider( WheelCollider wheelCollider, Transform wheelTransform)
+    private void UpdateSingleWheelCollider(WheelCollider wheelCollider, Transform wheelTransform)
     {
         Vector3 pos;
         Quaternion rot;
@@ -105,4 +111,10 @@ public class CarController : MonoBehaviour
         wheelTransform.position = pos;
     }
 
+    private void ToggleHeadlights()
+    {
+        headlightsOn = !headlightsOn;
+        leftHeadlight.enabled = headlightsOn;
+        rightHeadlight.enabled = headlightsOn;
+    }
 }
